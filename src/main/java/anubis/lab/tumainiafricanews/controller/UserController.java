@@ -84,4 +84,14 @@ public class UserController {
         return ResponseEntity.ok(
                 ApiResponse.success("Statut de l'utilisateur modifié", null));
     }
+
+    @PatchMapping("/admin/{id}/change-role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> changeUserRole(
+            @PathVariable Long id,
+            @RequestParam Long idRole) {
+        userService.changeUserRole(id, idRole);
+        return ResponseEntity.ok(
+                ApiResponse.success("Role de l'utilisateur modifié", null));
+    }
 }

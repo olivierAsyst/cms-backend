@@ -1,9 +1,11 @@
 package anubis.lab.tumainiafricanews.service;
 
 import anubis.lab.tumainiafricanews.dto.request.auth.UpdateUserRequest;
+import anubis.lab.tumainiafricanews.entity.auth.Role;
 import anubis.lab.tumainiafricanews.entity.auth.User;
 import anubis.lab.tumainiafricanews.exception.BusinessException;
 import anubis.lab.tumainiafricanews.exception.ResourceNotFoundException;
+import anubis.lab.tumainiafricanews.repository.RoleRepository;
 import anubis.lab.tumainiafricanews.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +21,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     public User findById(Long id) {
         return userRepository.findById(id)
@@ -79,8 +83,20 @@ public class UserService {
     public void toggleUserStatus(Long userId, boolean enabled) {
         User user = findById(userId);
         user.setEnabled(enabled);
+        user.setAccountNonLocked(enabled); // Si désactivé, verrouille le compte
         userRepository.save(user);
         log.info("Statut de l'utilisateur {} changé à: {}", user.getUsername(), enabled);
+    }
+
+    @Transactional
+    public void changeUserRole(Long userId, Long idRole) {
+        User user = findById(userId);
+        Role role = roleRepository.findById(idRole)
+                .orElseThrow(() -> new ResourceNotFoundException("Rôle non trouvé avec l'ID: " + idRole));
+        user.getRoles().clear();
+        user.getRoles().add(role);
+        userRepository.save(user);
+        log.info("Role de l'utilisateur {} changé à: {}", user.getUsername(), role.getName());
     }
 
     public boolean existsByUsername(String username) {
@@ -90,5 +106,15 @@ public class UserService {
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
     }
+
+    public Role findRoleById(Long id) {
+        return roleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Role non trouvé avec l'ID: " + id));
+    }
+
+    public List<Role> findAllRole() {
+        return roleRepository.findAll();
+    }
+
 
 }
