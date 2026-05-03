@@ -1,22 +1,27 @@
 package anubis.lab.tumainiafricanews.entity;
 
-import jakarta.persistence.Embeddable;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.*;
 
-@Embeddable
+@Entity
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ArticleImage {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String fileName;
-    private String url;           // URL MinIO
+    private String url;
     private String altText;
-    private Integer position;     // Ordre d'affichage
+    private Integer position;
+
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "article_id")
     private Article article;
 
     public ArticleImage(String originalFilename, String url, String s, int i) {

@@ -4,8 +4,6 @@ import anubis.lab.tumainiafricanews.entity.Article;
 import anubis.lab.tumainiafricanews.enums.ArticleStatus;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.time.LocalDateTime;
-
 public class ArticleSpecification {
 
     public static Specification<Article> withStatus(ArticleStatus status) {

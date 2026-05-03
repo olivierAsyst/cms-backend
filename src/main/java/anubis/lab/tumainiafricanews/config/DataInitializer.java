@@ -15,13 +15,13 @@ import java.util.Set;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DataInitializer implements CommandLineRunner {
+public class DataInitializer{//} implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Override
+//    @Override
     public void run(String... args) throws Exception {
         if (roleRepository.count() == 0) {
             log.info("Initialisation des rôles...");

@@ -35,7 +35,8 @@ public class Article {
     @Column(columnDefinition = "TEXT")
     private String summary;                 // Chapô / résumé
 
-    @Column(columnDefinition = "LONGTEXT")
+    @Column()
+    @Lob
     private String content;                 // Contenu complet (HTML ou Markdown)
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -54,9 +55,12 @@ public class Article {
     )
     private Set<Tag> tags = new HashSet<>();
 
-    @ElementCollection
-    @CollectionTable(name = "article_images", joinColumns = @JoinColumn(name = "article_id"))
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArticleImage> images = new ArrayList<>();
+
+//    @ElementCollection
+//    @CollectionTable(name = "article_images", joinColumns = @JoinColumn(name = "article_id"))
+//    private List<ArticleImage> images = new ArrayList<>();
 
     private String mainImageUrl;            // Image principale (featured)
 
