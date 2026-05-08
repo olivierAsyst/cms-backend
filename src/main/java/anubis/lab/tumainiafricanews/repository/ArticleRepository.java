@@ -16,13 +16,6 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     // Recherche par slug (unique)
     Optional<Article> findBySlug(String slug);
 
-    // Articles publiés (pour le front public)
-    Page<Article> findByStatusOrderByPublishedAtDesc(ArticleStatus status, Pageable pageable);
-
-    // Articles publiés par catégorie
-    Page<Article> findByStatusAndCategory_SlugOrderByPublishedAtDesc(
-            ArticleStatus status, String categorySlug, Pageable pageable);
-
     // Recherche par titre ou contenu (full-text like)
     @Query("SELECT a FROM Article a WHERE a.status = 'PUBLISHED' AND " +
             "(LOWER(a.title) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
@@ -44,4 +37,25 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     boolean existsBySlugAndIdNot(String slug, Long id);
 
     Page<Article> findAll(Specification<Article> spec, Pageable pageable);
+
+    //FOR HOMEPAGE
+    // Articles publiés (pour le front public)
+    // Page<Article> findByStatusOrderByPublishedAtDesc(ArticleStatus status, Pageable pageable);
+
+    // Articles publiés par catégorie
+    // Page<Article> findByStatusAndCategory_SlugOrderByPublishedAtDesc(ArticleStatus status, String categorySlug, Pageable pageable);
+
+    Optional<Article> findTopByStatusAndFeaturedTrueOrderByPublishedAtDesc(ArticleStatus status);
+
+    List<Article> findTopByStatusAndBreakingTrueOrderByPublishedAtDesc(ArticleStatus status, Pageable pageable);
+
+    Page<Article> findByStatusOrderByPublishedAtDesc(ArticleStatus status, Pageable pageable);
+
+    Page<Article> findByStatusOrderByViewCountDesc(ArticleStatus status, Pageable pageable);
+
+    // Pour catégorie
+    Page<Article> findByStatusAndCategory_SlugOrderByPublishedAtDesc(ArticleStatus status, String slug, Pageable pageable);
+
+    // Pour détail article
+    Optional<Article> findBySlugAndStatus(String slug, ArticleStatus status);
 }

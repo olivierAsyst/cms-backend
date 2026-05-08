@@ -7,18 +7,25 @@ import org.springframework.data.jpa.domain.Specification;
 public class ArticleSpecification {
 
     public static Specification<Article> withStatus(ArticleStatus status) {
-        return (root, query, cb) -> status == null ? null : cb.equal(root.get("status"), status);
+        return (root, query, cb) ->
+                status == null ? null : cb.equal(root.get("status"), status);
+    }
+
+    public static Specification<Article> withFeatured(Boolean featured) {
+        return (root, query, cb) ->
+                featured == null ? null : cb.equal(root.get("featured"), featured);
     }
 
     public static Specification<Article> withCategory(Long categoryId) {
-        return (root, query, cb) -> categoryId == null ? null :
-                cb.equal(root.get("category").get("id"), categoryId);
+        return (root, query, cb) ->
+                categoryId == null ? null : cb.equal(root.get("category").get("id"), categoryId);
     }
 
     public static Specification<Article> withAuthor(String username) {
-        return (root, query, cb) -> username == null ? null :
-                cb.equal(root.get("author").get("username"), username);
+        return (root, query, cb) ->
+                username == null ? null : cb.equal(root.get("author").get("username"), username);
     }
+
 
     public static Specification<Article> isFeatured() {
         return (root, query, cb) -> cb.equal(root.get("featured"), true);
@@ -35,4 +42,6 @@ public class ArticleSpecification {
             );
         };
     }
+
+
 }

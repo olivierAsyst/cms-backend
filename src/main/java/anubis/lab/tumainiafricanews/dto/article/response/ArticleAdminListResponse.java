@@ -1,4 +1,4 @@
-package anubis.lab.tumainiafricanews.dto.response;
+package anubis.lab.tumainiafricanews.dto.article.response;
 
 import anubis.lab.tumainiafricanews.enums.ArticleStatus;
 
@@ -11,6 +11,7 @@ public record ArticleAdminListResponse(
         ArticleStatus status,
         String authorUsername,
         String categoryName,
+        String mainImageUrl,
         LocalDateTime createdAt,
         LocalDateTime publishedAt,
         int viewCount,

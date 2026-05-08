@@ -1,13 +1,11 @@
 package anubis.lab.tumainiafricanews.service;
 
 import anubis.lab.tumainiafricanews.config.MinioService;
-import anubis.lab.tumainiafricanews.dto.request.ArticleCreateRequest;
-import anubis.lab.tumainiafricanews.dto.request.ArticleUpdateRequest;
-import anubis.lab.tumainiafricanews.dto.request.PublishRequest;
+import anubis.lab.tumainiafricanews.dto.article.request.ArticleCreateRequest;
+import anubis.lab.tumainiafricanews.dto.article.request.ArticleUpdateRequest;
+import anubis.lab.tumainiafricanews.dto.article.request.PublishRequest;
+import anubis.lab.tumainiafricanews.dto.article.response.*;
 import anubis.lab.tumainiafricanews.dto.response.ApiResponse;
-import anubis.lab.tumainiafricanews.dto.response.ArticleAdminListResponse;
-import anubis.lab.tumainiafricanews.dto.response.ArticleListResponse;
-import anubis.lab.tumainiafricanews.dto.response.ArticleResponse;
 import anubis.lab.tumainiafricanews.entity.Article;
 import anubis.lab.tumainiafricanews.entity.ArticleImage;
 import anubis.lab.tumainiafricanews.entity.Category;
@@ -210,6 +208,41 @@ public class ArticleService {
     }
 
     // ==================== ADMIN ENDPOINTS ====================
+
+    @Transactional//(readOnly = true)
+    public ApiResponse<Page<ArticleAdminListResponse>> getArticlesForAdmin(
+            Pageable pageable,
+            String currentUsername,
+            boolean isAdmin,
+            ArticleStatus status,
+            Long categoryId,
+            Boolean featured) {
+
+        Specification<Article> spec = (root, query, cb) -> null;
+
+        if (!isAdmin) {
+            spec = spec.and(ArticleSpecification.withAuthor(currentUsername));
+        }
+
+        if (status != null) {
+            spec = spec.and(ArticleSpecification.withStatus(status));
+        }
+
+        if (categoryId != null) {
+            spec = spec.and(ArticleSpecification.withCategory(categoryId));
+        }
+
+        if (featured != null) {
+            spec = spec.and(ArticleSpecification.withFeatured(featured));
+        }
+
+        Page<Article> articles = articleRepository.findAll(spec, pageable);
+
+        Page<ArticleAdminListResponse> responsePage = articles.map(mapper::toAdminListResponse);
+
+        return ApiResponse.success("Articles récupérés avec succès", responsePage);
+    }
+
     public ApiResponse<Page<ArticleAdminListResponse>> getAllArticlesForAdmin(Pageable pageable) {
         Page<Article> articles = articleRepository.findAll(pageable);
         // Mapper vers ArticleAdminListResponse
@@ -289,6 +322,106 @@ public class ArticleService {
         }
     }
 
+    // Autres méthodes : update, publish, delete, findBySlug, findAllPublished, search, etc.
+
+    //FOR PUBLIC
+    @Transactional//(readOnly = true)
+    public HomePageResponse getHomePageData() {
+        return HomePageResponse.builder()
+                .featured(getFeaturedArticle())
+                .breaking(getBreakingNews(5))
+                .latest(getLatestArticles(8))
+                .popular(getPopularArticles(6))
+                .categories(getPopularCategories())
+                .build();
+    }
+
+    @Transactional//(readOnly = true)
+    public Page<ArticleListHomeResponse> getArticlesByCategory(String categorySlug, Pageable pageable) {
+        Page<Article> articles = articleRepository.findByStatusAndCategory_SlugOrderByPublishedAtDesc(
+                ArticleStatus.PUBLISHED, categorySlug, pageable);
+
+        return articles.map(mapper::toListHomeResponse);
+    }
+
+    @Transactional//(readOnly = true)
+    public ArticleResponse getPublicArticleBySlug(String slug) {
+        Article article = articleRepository.findBySlugAndStatus(slug, ArticleStatus.PUBLISHED)
+                .orElseThrow(() -> new ResourceNotFoundException("Article non trouvé ou non publié"));
+
+        // Incrémenter le compteur de vues
+        article.setViewCount(article.getViewCount() + 1);
+        articleRepository.save(article);
+
+        return mapper.toResponse(article);
+    }
+
+    @Transactional//(readOnly = true)
+    public Page<ArticleListHomeResponse> searchArticles(String query, Pageable pageable) {
+        Specification<Article> spec = Specification.allOf(ArticleSpecification.search(query))
+                .and(ArticleSpecification.withStatus(ArticleStatus.PUBLISHED));
+
+        Page<Article> articles = articleRepository.findAll(spec, pageable);
+        return articles.map(mapper::toListHomeResponse);
+    }
+
+    // Méthode déjà vue précédemment (pour cohérence)
+    public List<ArticleListHomeResponse> getBreakingNews(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return articleRepository.findTopByStatusAndBreakingTrueOrderByPublishedAtDesc(ArticleStatus.PUBLISHED, pageable)
+                .stream()
+                .map(mapper::toListHomeResponse)
+                .toList();
+    }
+
+    public List<ArticleListHomeResponse> getPopularArticles(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by("viewCount").descending());
+        return articleRepository.findByStatusOrderByViewCountDesc(ArticleStatus.PUBLISHED, pageable)
+                .getContent()
+                .stream()
+                .map(mapper::toListHomeResponse)
+                .toList();
+    }
+
+    private ArticleListHomeResponse getFeaturedArticle() {
+        return articleRepository.findTopByStatusAndFeaturedTrueOrderByPublishedAtDesc(ArticleStatus.PUBLISHED)
+                .map(mapper::toListHomeResponse)
+                .orElse(null);
+    }
+//
+//    public List<ArticleListHomeResponse> getBreakingNews(int limit) {
+//        return articleRepository.findTopByStatusAndBreakingTrueOrderByPublishedAtDesc(ArticleStatus.PUBLISHED, limit)
+//                .stream()
+//                .map(mapper::toListHomeResponse)
+//                .toList();
+//    }
+//
+    private List<ArticleListHomeResponse> getLatestArticles(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by("publishedAt").descending());
+        return articleRepository.findByStatusOrderByPublishedAtDesc(ArticleStatus.PUBLISHED, pageable)
+                .getContent()
+                .stream()
+                .map(mapper::toListHomeResponse)
+                .toList();
+    }
+//
+//    public List<ArticleListHomeResponse> getPopularArticles(int limit) {
+//        Pageable pageable = PageRequest.of(0, limit, Sort.by("viewCount").descending());
+//        return articleRepository.findByStatusOrderByViewCountDesc(ArticleStatus.PUBLISHED, pageable)
+//                .getContent()
+//                .stream()
+//                .map(mapper::toListHomeResponse)
+//                .toList();
+//    }
+//
+    private List<CategoryListResponse> getPopularCategories() {
+        // Tu peux faire une requête plus intelligente plus tard
+        return categoryRepository.findAll().stream()
+                .limit(8)
+                .map(c -> new CategoryListResponse(c.getId(), c.getName(), c.getSlug()))
+                .toList();
+    }
+
     private boolean hasAdminRole() {
         return SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
@@ -305,5 +438,5 @@ public class ArticleService {
         return slug;
     }
 
-    // Autres méthodes : update, publish, delete, findBySlug, findAllPublished, search, etc.
+
 }

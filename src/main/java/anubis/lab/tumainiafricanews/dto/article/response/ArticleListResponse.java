@@ -1,4 +1,4 @@
-package anubis.lab.tumainiafricanews.dto.response;
+package anubis.lab.tumainiafricanews.dto.article.response;
 
 import java.time.LocalDateTime;
 

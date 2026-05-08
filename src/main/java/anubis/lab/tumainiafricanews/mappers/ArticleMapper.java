@@ -1,10 +1,11 @@
 package anubis.lab.tumainiafricanews.mappers;
 
-import anubis.lab.tumainiafricanews.dto.request.ArticleCreateRequest;
-import anubis.lab.tumainiafricanews.dto.request.ArticleUpdateRequest;
-import anubis.lab.tumainiafricanews.dto.response.ArticleAdminListResponse;
-import anubis.lab.tumainiafricanews.dto.response.ArticleListResponse;
-import anubis.lab.tumainiafricanews.dto.response.ArticleResponse;
+import anubis.lab.tumainiafricanews.dto.article.request.ArticleCreateRequest;
+import anubis.lab.tumainiafricanews.dto.article.request.ArticleUpdateRequest;
+import anubis.lab.tumainiafricanews.dto.article.response.ArticleAdminListResponse;
+import anubis.lab.tumainiafricanews.dto.article.response.ArticleListHomeResponse;
+import anubis.lab.tumainiafricanews.dto.article.response.ArticleListResponse;
+import anubis.lab.tumainiafricanews.dto.article.response.ArticleResponse;
 import anubis.lab.tumainiafricanews.entity.Article;
 import anubis.lab.tumainiafricanews.entity.ArticleImage;
 import anubis.lab.tumainiafricanews.entity.Category;
@@ -14,8 +15,10 @@ import anubis.lab.tumainiafricanews.enums.ArticleStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Component
@@ -75,6 +78,23 @@ public class ArticleMapper {
         );
     }
 
+    public ArticleListHomeResponse toListHomeResponse(Article article) {
+        return new ArticleListHomeResponse(
+                article.getId(),
+                article.getTitle(),
+                article.getSlug(),
+                article.getSummary(),
+                article.getMainImageUrl(),
+                article.getAuthor().getUsername(),
+                article.getCategory() != null ? article.getCategory().getName() : null,
+                article.getTags().stream().map(Tag::getName).toList(),
+                article.getPublishedAt(),
+                article.getViewCount(),
+                article.isFeatured(),
+                article.isBreaking()
+        );
+    }
+
     public ArticleAdminListResponse toAdminListResponse(Article article) {
         return new ArticleAdminListResponse(
                 article.getId(),
@@ -83,6 +103,7 @@ public class ArticleMapper {
                 article.getStatus(),
                 article.getAuthor().getUsername(),
                 article.getCategory() != null ? article.getCategory().getName() : null,
+                article.getMainImageUrl(),
                 article.getCreatedAt(),
                 article.getPublishedAt(),
                 article.getViewCount(),

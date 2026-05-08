@@ -1,13 +1,14 @@
 package anubis.lab.tumainiafricanews.controller;
 
-import anubis.lab.tumainiafricanews.dto.request.ArticleCreateRequest;
-import anubis.lab.tumainiafricanews.dto.request.ArticleUpdateRequest;
-import anubis.lab.tumainiafricanews.dto.request.PublishRequest;
+import anubis.lab.tumainiafricanews.dto.article.request.ArticleCreateRequest;
+import anubis.lab.tumainiafricanews.dto.article.request.ArticleUpdateRequest;
+import anubis.lab.tumainiafricanews.dto.article.request.PublishRequest;
 import anubis.lab.tumainiafricanews.dto.response.ApiResponse;
-import anubis.lab.tumainiafricanews.dto.response.ArticleAdminListResponse;
-import anubis.lab.tumainiafricanews.dto.response.ArticleListResponse;
-import anubis.lab.tumainiafricanews.dto.response.ArticleResponse;
+import anubis.lab.tumainiafricanews.dto.article.response.ArticleAdminListResponse;
+import anubis.lab.tumainiafricanews.dto.article.response.ArticleListResponse;
+import anubis.lab.tumainiafricanews.dto.article.response.ArticleResponse;
 import anubis.lab.tumainiafricanews.enums.ArticleStatus;
+import anubis.lab.tumainiafricanews.exception.BusinessException;
 import anubis.lab.tumainiafricanews.service.ArticleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,7 +19,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -85,11 +88,30 @@ public class ArticleController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
     public ResponseEntity<ApiResponse<Page<ArticleAdminListResponse>>> getAllForAdmin(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) ArticleStatus status,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean featured) {
+
+        String currentUsername = getCurrentUsername();
+        boolean isAdmin = isAdmin();
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return ResponseEntity.ok(articleService.getAllArticlesForAdmin(pageable));
+
+        return ResponseEntity.ok(
+                articleService.getArticlesForAdmin(pageable, currentUsername, isAdmin, status, categoryId, featured)
+        );
     }
+
+//    @GetMapping("/admin")
+//    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
+//    public ResponseEntity<ApiResponse<Page<ArticleAdminListResponse>>> getAllForAdmin(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size) {
+//
+//        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+//        return ResponseEntity.ok(articleService.getAllArticlesForAdmin(pageable));
+//    }
 
     @GetMapping("/admin/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
@@ -110,10 +132,23 @@ public class ArticleController {
     public ResponseEntity<ApiResponse<Page<ArticleAdminListResponse>>> getMyArticles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) ArticleStatus status,
-            @AuthenticationPrincipal(expression = "username") String username) {
-
+            @RequestParam(required = false) ArticleStatus status) {
+        String username = getCurrentUsername();
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return ResponseEntity.ok(articleService.getMyArticles(pageable, username, status));
+    }
+
+    private boolean isAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private String getCurrentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BusinessException("Utilisateur non authentifié");
+        }
+        return authentication.getName();
     }
 }

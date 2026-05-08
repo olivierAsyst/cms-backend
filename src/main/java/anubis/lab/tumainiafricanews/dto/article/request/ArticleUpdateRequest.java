@@ -1,4 +1,4 @@
-package anubis.lab.tumainiafricanews.dto.request;
+package anubis.lab.tumainiafricanews.dto.article.request;
 
 import java.util.Set;
 

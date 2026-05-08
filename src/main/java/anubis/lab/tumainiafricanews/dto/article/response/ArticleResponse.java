@@ -1,4 +1,4 @@
-package anubis.lab.tumainiafricanews.dto.response;
+package anubis.lab.tumainiafricanews.dto.article.response;
 
 import anubis.lab.tumainiafricanews.enums.ArticleStatus;
 

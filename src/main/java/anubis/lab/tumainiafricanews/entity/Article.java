@@ -95,4 +95,12 @@ public class Article {
         this.images.add(image);
         image.setArticle(this);
     }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
 }
